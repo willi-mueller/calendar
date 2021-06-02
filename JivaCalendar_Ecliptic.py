@@ -20,7 +20,7 @@ from astropy.coordinates import get_body_barycentric, get_body, get_moon, get_su
 from astropy.coordinates import SkyCoord, GCRS, ICRS, Angle, GeocentricTrueEcliptic, GeocentricMeanEcliptic
 import numpy as np
 from scipy.optimize import fsolve
-from datetime import date, timedelta, datetime, time
+from datetime import date, timedelta, datetime, time, timezone
 
 from astropy.coordinates import solar_system_ephemeris
 solar_system_ephemeris.set('jpl')
@@ -45,7 +45,7 @@ def astropy_to_datetime(t):
     date_,time = t.value.split()
     year,month,day = [mjs.eval(s) for s in date_.split('-')]
     hr,min,sec = [mjs.eval(s) for s in time.split(':')]
-    return datetime(year,month,day,hr,min,int(sec))
+    return datetime(year,month,day,hr,min,int(sec),tzinfo=timezone.utc)
 
 Rasi_list = ["Mesa","Rsabha","Mithuna","Karkataka","Simha","Kanya","Tula","Vrscika","Dhanus","Makara","Kumbha","Meena"]
 
