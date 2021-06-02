@@ -13,11 +13,13 @@ The final calendar code will be contained in 2 files. One is labelled JivaCalend
 # Dependencies and Utils
 """
 
+from astroplan import Observer
 from astropy import units as u
 from astropy.time import Time
 from astropy.coordinates import solar_system_ephemeris, EarthLocation
 from astropy.coordinates import get_body_barycentric, get_body, get_moon, get_sun
 from astropy.coordinates import SkyCoord, GCRS, ICRS, Angle, GeocentricTrueEcliptic, GeocentricMeanEcliptic
+
 import numpy as np
 from scipy.optimize import fsolve
 from datetime import date, timedelta, datetime, time, timezone
@@ -141,7 +143,7 @@ def find_new_moon_date_before_Ec(t=Time("J2000")):
     return exact_date
 
 def find_new_moon_time_Ec(t=Time("J2000"),accuracy=0.1):
-    # Using the above two functions,  this one finds the exact new moon date and time. 
+    # Using the above two functions, this one finds the exact new moon date and time before t
     # accuracy is the maximum angle difference in degrees from 360deg 
     date_ = find_new_moon_date_before_Ec(t=t)
     ang,_ = get_angle_tithi_Ec(date_)
@@ -269,4 +271,15 @@ def find_rasi_Ec(lon,ayanamsa='citrapaksa'):
     rasi = Rasi_list[num]
     return num, rasi
 
-
+def get_local_observations(location,t=Time("J2000"),sun_horizon=Angle('-50m'),moon_horizon=Angle('-50m')):
+    (latitude,longitude) = location
+    obs = Observer(latitude=latitude,longitude=longitude)
+    sunrise = obs.sun_rise_time(t, which="previous",horizon=sun_horizon) 
+    sunset = obs.sun_set_time(t, which="next",horizon=sun_horizon)
+    moonrise = obs.moon_rise_time(t, which="previous",horizon=moon_horizon)
+    moonset =  obs.moon_set_time(t, which="next",horizon=moon_horizon)
+    sunrise.format = 'iso'
+    sunset.format = 'iso'
+    moonrise.format = 'iso'
+    moonset.format = 'iso'
+    return sunrise,sunset,moonrise,moonset
