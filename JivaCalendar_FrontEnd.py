@@ -16,7 +16,8 @@ def get_tithi_start_end_Ec(t="J2000",accuracy=0.01):
     f_time = jce.solve_moon_time_Ec(f_lon,t,accuracy=accuracy)
     tit = int(s_lon/12)+1
     info = f"tithi containing the time {t}"
-    data = {"tithi":tit,"tithi start time":s_time,"tithi end time":f_time}
+    data = {"tithi":tit,"tithi start time":jce.astropy_to_datetime(s_time),
+            "tithi end time":jce.astropy_to_datetime(f_time)}
     return {"info":info,"data":data}
 
 def get_masa_start_end_Ec(t="J2000",accuracy=0.01,ayanamsa='citrapaksa'):
@@ -30,8 +31,9 @@ def get_masa_start_end_Ec(t="J2000",accuracy=0.01,ayanamsa='citrapaksa'):
     masa = jce.Maasa_list[num]
     sun_naksatra = jce.find_naksatra_Ec(s.lon,ayanamsa=ayanamsa)[1]
     # sun_naksatra is only correct at the start of the month
-    info = f"the masa containing the time {t}"
-    data = {"masa start time":time_s,"masa end time":time_e,"masa": masa,"sun naksatra at month beginning": sun_naksatra}
+    info = f"the masa containing the time {jce.astropy_to_datetime(t)}"
+    data = {"masa start time":jce.astropy_to_datetime(time_s),"masa end time":jce.astropy_to_datetime(time_e),
+            "masa": masa,"sun naksatra at month beginning": sun_naksatra}
     return {"info":info,"data":data}
 
 def get_pancanga_instant_Ec(t="2021-5-31 10:00:00",accuracy=0.01,ayanamsa='citrapaksa'):
@@ -43,7 +45,7 @@ def get_pancanga_instant_Ec(t="2021-5-31 10:00:00",accuracy=0.01,ayanamsa='citra
     m,s = jce.get_sun_moon_Ec(t)
     _,m_naksatra = jce.find_naksatra_Ec(lon=m.lon,ayanamsa=ayanamsa)
     _,s_naksatra = jce.find_naksatra_Ec(lon=s.lon,ayanamsa=ayanamsa)
-    info = f"pancanga for the time {t}"
+    info = f"pancanga for the time {jce.astropy_to_datetime(t)}"
     data = {"tithi":tithi,"masa":masa,"moon naksatra":m_naksatra,"sun naksatra":s_naksatra}
     return {"info":info,"data":data}
 
@@ -61,6 +63,7 @@ def get_pancanga_lunar_month(t="2021-5-31 10:00:00",accuracy=0.01,ayanamsa='citr
         print("running tithi:",i+1," "*20)
       lon = 12*i
       time_ = jce.solve_moon_time_Ec(lon,t,accuracy=accuracy)
-      data += [(i+1,time_)]
-    info = {"this file contains tithis and their start times, for the masa containing the time":t,"sun naksatra at month beginning:":s_nm_nak,"masa:":masa}
+      data += [(i+1,jce.astropy_to_datetime(time_))]
+    info = {"this file contains tithis and their start times, for the masa containing the time":jce.astropy_to_datetime(t),
+            "sun naksatra at month beginning:":s_nm_nak,"masa:":masa}
     return info,data
