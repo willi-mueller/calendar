@@ -22,7 +22,6 @@ month_data = cal.get_pancanga_gregorian_month_Ec(verbose=True)
 
 To Do's for Utkarsh
 
-1. Write documentation.
-2. Replace solve_moon_time_Ec(lon,t) and find_new_moon_time_Ec(t) with solve_body_time_Ec(lon,t,body='moon_synodic') and solve_body_time_Ec(lon=0,t,body='moon_synodic'). Check extensively.
+1. Check extensively for solve_moon_time_Ec(lon,t) and find_new_moon_time_Ec(t). Delete if not found anywhere.
 
 Cheers! Radhe!
