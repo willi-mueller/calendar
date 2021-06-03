@@ -6,7 +6,7 @@ import pytz
 from astropy.coordinates import Angle
 
 class Pancanga:
-	def __init__(self,date=(2021,1,1),time=(0,0,0),location=(None,None),timezone=tmz.utc):
+	def __init__(self,date=(2021,1,1),time=(0,0,0),location=(None,None),timezone=timezone('UTC')):
 		# location is in (latitude,longitude), each being a float. self.location should be (Angle,Angle)
 		self.location = (process_angle(location[0]),process_angle(location[1]))
 
@@ -83,33 +83,6 @@ class Pancanga:
 			self.all_tithis_in_masa = data
 			self.all_tithis_in_masa_calc_info = {"accuracy":accuracy,"ayanamsa":ayanamsa}
 		return masa,data
-
-	def get_pancanga_gregorian_month_Ec_old(self,accuracy=0.0001,ayanamsa='citrapaksa',verbose=True,update_attributes=True):
-		month_start = self.datetime.replace(day=1,hour=0,minute=0,second=0).astimezone(tz=tmz.utc)
-		month_middle = self.datetime.replace(day=15,hour=0,minute=0,second=0).astimezone(tz=tmz.utc)
-		if self.datetime.month<12:
-			month_end = self.datetime.replace(hour = 0,minute=0,second=0,day=1,month=self.datetime.month+1).astimezone(tz=tmz.utc)
-		if self.datetime.month==12:
-			month_end = self.datetime.replace(hour = 0,minute=0,second=0,day=1,month=1,year=self.datetime.year+1).astimezone(tz=tmz.utc)
-
-		tithi,time_e = get_tithi_start_end_Ec(month_start,accuracy=accuracy,get_start=False)
-		masa,_,_ = get_masa_start_end_Ec(month_start,accuracy=accuracy,ayanamsa=ayanamsa)
-		moon_sankramana,moon_naksatra = get_sankramana_time(t=month_start,body='moon',find='next',accuracy=accuracy,ayanamsa=ayanamsa)
-		all_tithis = [(masa,tithi,time_e)]
-		i = 1
-		while time_e<month_end:
-			if verbose and i%5==0: 
-				print("running tithi:",i," "*20)
-			tithi,time_e = get_tithi_start_end_Ec(time_e+timedelta(hours=2),accuracy=accuracy,get_start=False)
-			if tithi==1:
-				masa,_,_ = get_masa_start_end_Ec(time_e+timedelta(days=2),accuracy=accuracy,ayanamsa=ayanamsa)
-			all_tithis += [(masa,tithi,time_e)]
-			i += 1
-		i = 0
-		while date_<month_end:
-			if verbose and i%5==0: 
-				print("running lunar sankramana:",i," "*20)
-			moon_sankramana,moon_naksatra = get_sankramana_time(t=month_start,body='moon',find='next',accuracy=accuracy,ayanamsa=ayanamsa)
 
 	def get_pancanga_gregorian_month_Ec(self,accuracy=0.0001,ayanamsa='citrapaksa',verbose=True,update_attributes=True,
 						sun_horizon=Angle('-50m'),moon_horizon=Angle('-50m')):
