@@ -194,6 +194,8 @@ def timezone_lookup(location):
 	return pytz.timezone('EST')
 
 def process_timezone(timezone):
+	if type(timezone)==pytz.timezone:
+		return timezone
 	timezone = timezone.lower()
 
 	if timezone=='est':
