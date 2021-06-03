@@ -23,5 +23,6 @@ month_data = cal.get_pancanga_gregorian_month_Ec(verbose=True)
 To Do's for Utkarsh
 
 1. Check extensively for solve_moon_time_Ec(lon,t) and find_new_moon_time_Ec(t). Delete if not found anywhere.
+2. Add more timezones
 
 Cheers! Radhe!
