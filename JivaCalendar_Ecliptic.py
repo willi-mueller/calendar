@@ -65,6 +65,8 @@ maasa_gaps = [28, 33, 34, 35]
 
 lunar_month = 29.5306 #length of lunar month in days
 
+time_periods = {'sun':365.25636,'moon':27.321,'moon_synodic':29.5306} # length of sidereal time periods in days
+
 coord_Revati_ICRS = SkyCoord(ra='01h13m45.17477s', dec='+7d34m31.2745s', frame='icrs', equinox=Time(2000, format='jyear')) 
 coord_Revati_Ec = coord_Revati_ICRS.transform_to(GeocentricTrueEcliptic()) # Geocentric True Ecliptic coordinates of Revati (Zeta Piscium A)
 ayanamsa_revati = coord_Revati_Ec.lon
@@ -218,6 +220,48 @@ def find_new_moon_time_fsolve_Ec(t=Time("J2000"),accuracy=1):
     print(datetime_solution)
     #return datetime_to_astropy(approx_time)
 
+def solve_body_time_Ec(lon,t,body,accuracy=0.01):
+    tp = time_periods[body]
+    def body_lon(t_):
+        if type(t_)==datetime: t_ = datetime_to_astropy(t_)
+        m,s = get_sun_moon_Ec(t_)
+        if body=='sun': return s.lon.degree
+        if body=='moon': return m.lon.degree
+        if body=='moon_synodic':
+            ang,_ = get_angle_tithi_Ec(t_)
+            return ang
+        return "body not found"
+
+    if lon>30 and lon<330:
+        c = body_lon(t)
+        approx_time = astropy_to_datetime(t)-timedelta(days=((c-lon)%360)/360*tp)
+        c = body_lon(approx_time)
+        del_ang = c - lon
+        iter = 0
+        while abs(del_ang)>accuracy:
+            iter += 1
+            if iter>100:
+                raise Exception("Exceeded 100 iterations inside solve_body_time_absolute_Ec")
+            approx_delta = timedelta(seconds=del_ang/360*tp*24*60*60)
+            approx_time -= approx_delta 
+            c = body_lon(approx_time)
+            del_ang = c - lon
+    else:
+        c = body_lon(t)
+        approx_time = astropy_to_datetime(t)-timedelta(days=((c-lon)%360)/360*tp)
+        c = (body_lon(approx_time)+180)%360
+        lon = (lon+180)%360
+        del_ang = c - lon
+        iter = 0
+        while abs(del_ang)>accuracy:
+            iter += 1
+            if iter>100:
+                raise Exception("Exceeded 100 iterations inside solve_body_time_absolute_Ec")
+            approx_delta = timedelta(seconds=del_ang/360*tp*24*60*60)
+            approx_time -= approx_delta 
+            c = (body_lon(approx_time)+180)%360
+            del_ang = c - lon
+    return datetime_to_astropy(approx_time)
 
 
 """# Getting Naksatra and Rasi Longitudes, and Finding Naksatra and Rasi for a given Longitude"""
