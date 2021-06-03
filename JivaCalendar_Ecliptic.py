@@ -108,7 +108,7 @@ def get_angle_tithi_Ec(t= Time("J2000")):
 """# Finding New Moon and Solving for time"""
 
 def find_new_moon_Ec(t_approx):
-    # Find the exact date (+/-1 day) of new moon, given an approximate date. 
+    # Find the exact date of new moon, given an approximate date (+/-1 day).
     # Input either in astropy.time.Time or datetime.date
     date_ = astropy_to_date(t_approx) # Extracting only the date. No time
     t = datetime_to_astropy(date_)
@@ -198,30 +198,9 @@ def solve_moon_time_Ec(lon,t,accuracy=0.1):
         # By default if moon is 2 degrees behind sun, then ang=358. We want that to be 2degrees
         # if moon-sun=2degrees then ang=-2
 
-
-### The func below is to do the same job but with fsolve. 
-### It does't work because fsolve needs to pass arrays as the input, and datetime etc dont allow that.
-def find_new_moon_time_fsolve_Ec(t=Time("J2000"),accuracy=1):
-    # Using the above two functions, find the exact new moon date. 
-    # Then use this one to find the time.
-    # accuracy is the maximum angle difference in degrees from 360deg 
-    ang,tit = get_angle_tithi_Ec(t)
-    approx_date = astropy_to_datetime(t) - timedelta(days=ang/360*lunar_month)
-    print(approx_date)
-    def ang_solver(t_):
-      del_ = timedelta(minutes=t_)
-      ang_,_ = get_angle_tithi_Ec(approx_date+del_)
-      print(ang_)
-      return ang_a
-    
-    t_solution = fsolve(ang_solver, 0)
-    datetime_solution =  approx_date + timedelta(t_solution)
-    print(t_solution)
-    print(datetime_solution)
-    #return datetime_to_astropy(approx_time)
-
-def solve_body_time_Ec(lon,t,body,accuracy=0.01):
+def solve_body_time_Ec(lon,t,body,accuracy=0.01,find='previous'):
     tp = time_periods[body]
+    if type(lon)==Angle: lon = lon.degree
     def body_lon(t_):
         if type(t_)==datetime: t_ = datetime_to_astropy(t_)
         m,s = get_sun_moon_Ec(t_)
@@ -232,9 +211,15 @@ def solve_body_time_Ec(lon,t,body,accuracy=0.01):
             return ang
         return "body not found"
 
+    c = body_lon(t)
+    if c==lon: return t
+
+    if find.lower()=='previous':
+        approx_time = astropy_to_datetime(t) - timedelta(days=((c-lon)%360)/360*tp)
+    if find.lower()=='next':
+        approx_time = astropy_to_datetime(t) + timedelta(days=((lon-c)%360)/360*tp)
+
     if lon>30 and lon<330:
-        c = body_lon(t)
-        approx_time = astropy_to_datetime(t)-timedelta(days=((c-lon)%360)/360*tp)
         c = body_lon(approx_time)
         del_ang = c - lon
         iter = 0
@@ -247,8 +232,6 @@ def solve_body_time_Ec(lon,t,body,accuracy=0.01):
             c = body_lon(approx_time)
             del_ang = c - lon
     else:
-        c = body_lon(t)
-        approx_time = astropy_to_datetime(t)-timedelta(days=((c-lon)%360)/360*tp)
         c = (body_lon(approx_time)+180)%360
         lon = (lon+180)%360
         del_ang = c - lon
@@ -261,6 +244,7 @@ def solve_body_time_Ec(lon,t,body,accuracy=0.01):
             approx_time -= approx_delta 
             c = (body_lon(approx_time)+180)%360
             del_ang = c - lon
+
     return datetime_to_astropy(approx_time)
 
 
@@ -300,7 +284,8 @@ def rasi_lon_Ec(ayanamsa='citrapaksa'):
 # Note that the below functions (to find Naksatra for a given longitude) don't use the above functions to generate a list of 
 # Naksatra longitudes. Just because there is no need to, so just to save time and compute.
 def find_naksatra_Ec(lon,ayanamsa='citrapaksa'):
-    if type(lon) in [int,float]: lon = Angle(f"{lon}d")
+    if type(lon) in [int,float,np.float64,np.float32]: 
+        lon = Angle(f"{lon}d")
     ayanamsa = get_ayanamsa(ayanamsa)
     lon = (lon-ayanamsa)%Angle("360d")
     num = int(lon/Angle("13d20m"))
@@ -308,22 +293,55 @@ def find_naksatra_Ec(lon,ayanamsa='citrapaksa'):
     return num, nak
 
 def find_rasi_Ec(lon,ayanamsa='citrapaksa'):
-    if type(lon) in [int,float]: lon = Angle(f"{lon}d")
+    if type(lon) in [int,float,np.float64,np.float32]: 
+        lon = Angle(f"{lon}d")
     ayanamsa = get_ayanamsa(ayanamsa)
     lon = (lon-ayanamsa)%Angle("360d")
     num = int(lon/Angle("30d"))
     rasi = Rasi_list[num]
     return num, rasi
 
-def get_local_observations(location,t=Time("J2000"),sun_horizon=Angle('-50m'),moon_horizon=Angle('-50m')):
+def get_local_observations(location,t=Time("J2000"),sun_horizon=Angle('-50m'),moon_horizon=Angle('-50m'),find=['nearest']*4):
+    # find could be a list of 4 str's ("nearest","previous" or "next"), or it could be "in_date"
+    # note: in_date may not return only the events in that date. It just starts checking at the starting of the date.
+    # So, some quantities may spill over into the next day in some rare cases (maybe in arctic circle etc?)
     (latitude,longitude) = location
+    if find=='in_date':
+        t = datetime_to_astropy(astropy_to_datetime(t).replace(hour=0,minute=0,second=0))
+        find = ["next"]*4
+
     obs = Observer(latitude=latitude,longitude=longitude)
-    sunrise = obs.sun_rise_time(t, which="previous",horizon=sun_horizon) 
-    sunset = obs.sun_set_time(t, which="next",horizon=sun_horizon)
-    moonrise = obs.moon_rise_time(t, which="previous",horizon=moon_horizon)
-    moonset =  obs.moon_set_time(t, which="next",horizon=moon_horizon)
+    sunrise = obs.sun_rise_time(t, which=find[0],horizon=sun_horizon) 
+    sunset = obs.sun_set_time(t, which=find[1],horizon=sun_horizon)
+    moonrise = obs.moon_rise_time(t, which=find[2],horizon=moon_horizon)
+    moonset =  obs.moon_set_time(t, which=find[3],horizon=moon_horizon)
     sunrise.format = 'iso'
     sunset.format = 'iso'
     moonrise.format = 'iso'
     moonset.format = 'iso'
     return sunrise,sunset,moonrise,moonset
+
+
+
+
+
+### The func below is to do the same job but with fsolve. 
+### It does't work because fsolve needs to pass arrays as the input, and datetime etc dont allow that.
+def find_new_moon_time_fsolve_Ec(t=Time("J2000"),accuracy=1):
+    # Using the above two functions, find the exact new moon date. 
+    # Then use this one to find the time.
+    # accuracy is the maximum angle difference in degrees from 360deg 
+    ang,tit = get_angle_tithi_Ec(t)
+    approx_date = astropy_to_datetime(t) - timedelta(days=ang/360*lunar_month)
+    print(approx_date)
+    def ang_solver(t_):
+      del_ = timedelta(minutes=t_)
+      ang_,_ = get_angle_tithi_Ec(approx_date+del_)
+      print(ang_)
+      return ang_a
+    
+    t_solution = fsolve(ang_solver, 0)
+    datetime_solution =  approx_date + timedelta(t_solution)
+    print(t_solution)
+    print(datetime_solution)
+    #return datetime_to_astropy(approx_time)
