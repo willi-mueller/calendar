@@ -11,6 +11,6 @@ To Do's for Utkarsh
 
 1. Very High level fucntion that generates a gregorian-month calendar like in drikpanchang.com
 2. Write documentation.
-3. Replace solve_moon_time_Ec(lon,t) with solve_body_time_Ec(lon,t,body='moon_synodic') and check extensively.
+3. Replace solve_moon_time_Ec(lon,t) and find_new_moon_time_Ec(t) with solve_body_time_Ec(lon,t,body='moon_synodic') and solve_body_time_Ec(lon=0,t,body='moon_synodic'). Check extensively.
 
 Cheers! Radhe!
