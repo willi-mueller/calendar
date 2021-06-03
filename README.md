@@ -9,10 +9,10 @@ Note: The code is almost complete. Usage example:
 
 
 import JivaCalendar_FrontEnd as jcf
-# date = (y,m,d) and time in (h,m,s). location is (lat,lon), both being in degrees. North is positive and East is positive.
+%# date = (y,m,d) and time in (h,m,s). location is (lat,lon), both being in degrees. North is positive and East is positive.
 cal = Pancanga(date=(2021,6,25),time=(14,0,0),location=(0,0),'EST')
 month_data = cal.get_pancanga_gregorian_month_Ec(verbose=True)
-# month_data is a list of dictionaries. I'll probably change it to a dataframe later. 
+%# month_data is a list of dictionaries. I'll probably change it to a dataframe later. 
 
 
 
