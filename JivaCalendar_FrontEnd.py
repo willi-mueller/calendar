@@ -24,7 +24,7 @@ class Pancanga:
 		self._datetime_utc = self.datetime.astimezone(tz=tmz.utc)
 
 
-	def get_pancanga_instant_Ec(self,accuracy=0.01,ayanamsa='citrapaksa',update_attributes=True,
+	def get_pancanga_instant_Ec(self,accuracy=0.0001,ayanamsa='citrapaksa',update_attributes=True,
 				sun_horizon=Angle('-50m'),moon_horizon=Angle('-50m')):
 
 		tithi,time_s,time_e = get_tithi_start_end_Ec(t=self._datetime_utc,accuracy=accuracy,get_start=True)
@@ -69,7 +69,7 @@ class Pancanga:
 				"moonrise/set":(moonrise,moonset),"sun_naksatra":s_naksatra,"moon_naksatra":m_naksatra,"next_moon_sankramana":next_moon_sankramana}
 
 
-	def get_pancanga_lunar_month_Ec(self,accuracy=0.01,ayanamsa='citrapaksa',verbose=True,update_attributes=True):
+	def get_pancanga_lunar_month_Ec(self,accuracy=0.0001,ayanamsa='citrapaksa',verbose=True,update_attributes=True):
 		masa,nm_time,_ = get_masa_start_end_Ec(self._datetime_utc,accuracy=accuracy,ayanamsa=ayanamsa)
 		data = [(1,nm_time)]
 		for i in range(1,30):
@@ -84,7 +84,7 @@ class Pancanga:
 			self.all_tithis_in_masa_calc_info = {"accuracy":accuracy,"ayanamsa":ayanamsa}
 		return masa,data
 
-	def get_pancanga_gregorian_month_Ec_old(self,accuracy=0.01,ayanamsa='citrapaksa',verbose=True,update_attributes=True):
+	def get_pancanga_gregorian_month_Ec_old(self,accuracy=0.0001,ayanamsa='citrapaksa',verbose=True,update_attributes=True):
 		month_start = self.datetime.replace(day=1,hour=0,minute=0,second=0).astimezone(tz=tmz.utc)
 		month_middle = self.datetime.replace(day=15,hour=0,minute=0,second=0).astimezone(tz=tmz.utc)
 		if self.datetime.month<12:
@@ -111,7 +111,7 @@ class Pancanga:
 				print("running lunar sankramana:",i," "*20)
 			moon_sankramana,moon_naksatra = get_sankramana_time(t=month_start,body='moon',find='next',accuracy=accuracy,ayanamsa=ayanamsa)
 
-	def get_pancanga_gregorian_month_Ec(self,accuracy=0.01,ayanamsa='citrapaksa',verbose=True,update_attributes=True,
+	def get_pancanga_gregorian_month_Ec(self,accuracy=0.0001,ayanamsa='citrapaksa',verbose=True,update_attributes=True,
 						sun_horizon=Angle('-50m'),moon_horizon=Angle('-50m')):
 		month_start = self.datetime.replace(day=1,hour=0,minute=0,second=0).astimezone(tz=tmz.utc)
 		month_middle = self.datetime.replace(day=15,hour=0,minute=0,second=0).astimezone(tz=tmz.utc)
