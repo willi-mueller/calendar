@@ -6,7 +6,7 @@ import pytz
 from astropy.coordinates import Angle
 
 class Pancanga:
-	def __init__(self,date=(2021,1,1),time=(0,0,0),location=(None,None),timezone=timezone('UTC')):
+	def __init__(self,date=(2021,1,1),time=(0,0,0),location=(None,None),timezone=pytz.timezone('UTC')):
 		# location is in (latitude,longitude), each being a float. self.location should be (Angle,Angle)
 		self.location = (process_angle(location[0]),process_angle(location[1]))
 
@@ -194,7 +194,7 @@ def timezone_lookup(location):
 	return pytz.timezone('EST')
 
 def process_timezone(timezone):
-	if type(timezone)==pytz.timezone:
+	if str(type(timezone)).startswith("<class 'pytz.tzfile."):
 		return timezone
 	timezone = timezone.lower()
 
