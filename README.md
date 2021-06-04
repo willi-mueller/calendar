@@ -17,7 +17,10 @@ cal = Pancanga(date=(2021,6,25),time=(14,0,0),location=(0,0),timezone='EST')
 month_data = cal.get_pancanga_gregorian_month_Ec(verbose=True)
 # month_data is a list of dictionaries. I'll probably change it to a dataframe later.
 ```
-you can change the accuracy of the compute by ```accuracy``` parameter. This parameter is the error value in degrees that we tolerate. For example, ```accuracy=0.01``` would mean that the tithi starting time (and all other calculations) are computed with the locations of the moon coming within ```0.01 degrees``` of the actual correct position.
+
+You can change the accuracy of the compute by ```accuracy``` parameter. This parameter is the error value in degrees that we tolerate. For example, ```accuracy=0.01``` would mean that the tithi starting time (and all other calculations) are computed with the locations of the moon coming within ```0.01 degrees``` of the actual correct position.
+
+Ayanamsa is the difference between sidereal and synodic zodiac. This difference occurs because of the precession of the Earth's axis. Since the ayanamsa changes with time, the calibration of the ```ayanamsa``` parameter in the code is at J2000, i.e. at 1 Jan, 2000.
  
 
 
