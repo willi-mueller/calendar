@@ -17,7 +17,7 @@ cal = Pancanga(date=(2021,6,25),time=(14,0,0),location=(0,0),timezone='EST')
 month_data = cal.get_pancanga_gregorian_month_Ec(verbose=True)
 # month_data is a list of dictionaries. I'll probably change it to a dataframe later.
 ```
-you can change the accuracy of the compute by ```python accuracy``` parameter. This parameter is the error value in degrees that we tolerate.
+you can change the accuracy of the compute by ```accuracy``` parameter. This parameter is the error value in degrees that we tolerate. For example, ```accuracy=0.01``` would mean that the tithi starting time (and all other calculations) are computed with the locations of the moon coming within ```0.01 degrees``` of the actual correct position.
  
 
 
