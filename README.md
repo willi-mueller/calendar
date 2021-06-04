@@ -1,6 +1,6 @@
 # JivaCalendar
 
-JivaCalendar_Ecliptic.py is the backend file. It contains core calculations etc.
+JivaCalendar_Ecliptic.py is the backend file. It contains core calculations etc. Note that the word 'ecliptic' in the name imples that the ecliptic plane is treated as one of the coordinate planes. Thus, longitudes are measured in the ecliptic plane, and the latitude planes are parallel to it. The results change if we use any other plane, e.g. the equatorial plane of the Earth. The function names in this file end in ```_Ec``` to emphasize this.
 
 JivaCalendar_FrontEnd.py contains high level functions that you may want to use. Using the front end functions should be intuitive, 
 and please let me know if it is not, so I can imporve it. We need to add functions to this file according to what Kamal Tyagi Maharaja says.
