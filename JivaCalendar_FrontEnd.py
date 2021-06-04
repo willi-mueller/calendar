@@ -102,7 +102,7 @@ class Pancanga:
 		date_ = month_start
 		i = 1
 		while date_<month_end:
-			if verbose: print(i,":",date_.astimezone(tz=self.timezone).strftime('%Y-%m-%d'))
+			if verbose: print("running:",date_.astimezone(tz=self.timezone).strftime('%Y-%m-%d'),' '*20,end='\r')
 
 			sunrise,sunset,_,_ = jce.get_local_observations(location=self.location,t=jce.datetime_to_astropy(date_),
 				sun_horizon=sun_horizon,moon_horizon=moon_horizon,find=["next"]*4)
@@ -132,7 +132,7 @@ class Pancanga:
 			all_data += [dict_]
 			date_ += timedelta(days=1)
 			i += 1
-
+		if verbose: print("finished running.",' '*20)
 
 		if update_attributes:
 			self.all_gregorian_month = all_data
