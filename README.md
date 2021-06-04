@@ -22,7 +22,7 @@ You can change the accuracy of the compute by ```accuracy``` parameter. This par
 
 Ayanamsa is the difference between sidereal and synodic zodiac. This difference occurs because of the precession of the Earth's axis. The value of ayanamsa changes at the rate of about 1 degree every 72 years.
 
-The ```ayanamsa``` can be a string ('citrapaksa', 'revati' etc.) or a floating point number (in degrees). If ```ayanamsa='citrapaksa'```, the ayanamsa is 180 degrees from the longitude of the star Citra (Spica). Similarly, ```ayanamsa='revati'``` sets the ayanamsa at the location of Revati (Zeta Piscium A). Specifying a floating point value sets the ayanamsa to be that value at J2000, i.e. 1 Jan, 2000. 
+The ```ayanamsa``` can be a string ('citrapaksa', 'revati' etc.) or a floating point number. If ```ayanamsa='citrapaksa'```, the ayanamsa is 180 degrees from the longitude of the star Citra (Spica). Similarly, ```ayanamsa='revati'``` sets the ayanamsa at the location of Revati (Zeta Piscium A). Specifying a floating point value sets the ayanamsa to be that value at J2000, i.e. 1 Jan, 2000. 
  
 
 
