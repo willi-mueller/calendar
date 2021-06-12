@@ -203,7 +203,7 @@ def process_timezone(timezone):
 	if timezone=='pst':
 		return pytz.timezone('PST')
 	if timezone=='utc':
-		return tmz.utc
+		return pytz.timezone('UTC')
 
 	return timezone
 
@@ -212,3 +212,11 @@ def process_angle(angle):
 	if type(angle)==str: return Angle(angle)
 	if type(angle) in [int,float]: return Angle(f"{angle}d")
 	if type(angle)==Angle: return angle
+
+
+if __name__ == "__main__":
+	moment = Pancanga(date=(2021,6,3),time=(21,17,0),location=(39.29,-76.61),timezone=pytz.timezone('US/Eastern'))
+	month_data = moment.get_pancanga_gregorian_month_Ec(verbose=True)
+	print(f"The data for each day of the month containing the date {(2021,6,3)} is generated.")
+	print("Below is a sample showing the data for the first day")
+	print(month_data[0])
