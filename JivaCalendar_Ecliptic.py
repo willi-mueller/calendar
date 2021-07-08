@@ -306,6 +306,10 @@ def get_local_observations(location,t=Time("J2000"),sun_horizon=Angle('-50m'),mo
     # note: in_date may not return only the events in that date. It just starts checking at the starting of the date.
     # So, some quantities may spill over into the next day in some rare cases (maybe in arctic circle etc?)
     (latitude,longitude) = location
+    latitude = Angle(f"{latitude}d")
+    longitude = Angle(f"{longitude}d")
+    sun_horizon = Angle(f"{sun_horizon}d")
+    moon_horizon = Angle(f"{moon_horizon}d")
     if find=='in_date':
         t = datetime_to_astropy(astropy_to_datetime(t).replace(hour=0,minute=0,second=0))
         find = ["next"]*4
