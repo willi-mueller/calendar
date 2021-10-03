@@ -20,6 +20,9 @@ from astropy.coordinates import solar_system_ephemeris, EarthLocation
 from astropy.coordinates import get_body_barycentric, get_body, get_moon, get_sun
 from astropy.coordinates import SkyCoord, GCRS, ICRS, Angle, GeocentricTrueEcliptic, GeocentricMeanEcliptic
 
+from astral import LocationInfo
+from astral.sun import sun
+
 import numpy as np
 from scipy.optimize import fsolve
 from datetime import date, timedelta, datetime, time, timezone
@@ -39,15 +42,10 @@ def datetime_to_astropy(date_):
     return Time(date_.strftime('%Y-%m-%d %H:%M:%S'))
 
 def astropy_to_date(t): # Converts only to date. Truncates
-    date_,time = t.value.split()
-    year,month,day = [mjs.eval(s) for s in date_.split('-')]
-    return date(year,month,day)
+    return t.to_datetime().date()
 
 def astropy_to_datetime(t):
-    date_,time = t.value.split()
-    year,month,day = [mjs.eval(s) for s in date_.split('-')]
-    hr,min,sec = [mjs.eval(s) for s in time.split(':')]
-    return datetime(year,month,day,hr,min,int(sec),tzinfo=timezone.utc)
+    return t.to_datetime()
 
 Rasi_list = ["Mesa","Rsabha","Mithuna","Karkataka","Simha","Kanya","Tula","Vrscika","Dhanus","Makara","Kumbha","Meena"]
 
@@ -301,7 +299,7 @@ def find_rasi_Ec(lon,ayanamsa='citrapaksa'):
     rasi = Rasi_list[num]
     return num, rasi
 
-def get_local_observations(location,t=Time("J2000"),sun_horizon=Angle('-50m'),moon_horizon=Angle('-50m'),find=['nearest']*4):
+def get_local_observations(location,t=Time("J2000"),sun_horizon=Angle('-0.26d'),moon_horizon=Angle('-0.26d'),find=['nearest']*4):
     # find could be a list of 4 str's ("nearest","previous" or "next"), or it could be "in_date"
     # note: in_date may not return only the events in that date. It just starts checking at the starting of the date.
     # So, some quantities may spill over into the next day in some rare cases (maybe in arctic circle etc?)
@@ -325,6 +323,14 @@ def get_local_observations(location,t=Time("J2000"),sun_horizon=Angle('-50m'),mo
     moonset.format = 'iso'
     return sunrise,sunset,moonrise,moonset
 
+def get_sunrise_sunset_astral(location,date_): 
+    # This is wayyy faster than the get_local_observations() module
+    # date_ is datetime.date
+    # sun_horizon is in degrees
+    city_ = LocationInfo(latitude=location[0],longitude=location[1])
+    s = sun(city_.observer, date=date_)
+    return s
+
 
 
 
@@ -337,15 +343,11 @@ def find_new_moon_time_fsolve_Ec(t=Time("J2000"),accuracy=1):
     # accuracy is the maximum angle difference in degrees from 360deg 
     ang,tit = get_angle_tithi_Ec(t)
     approx_date = astropy_to_datetime(t) - timedelta(days=ang/360*lunar_month)
-    print(approx_date)
     def ang_solver(t_):
       del_ = timedelta(minutes=t_)
       ang_,_ = get_angle_tithi_Ec(approx_date+del_)
-      print(ang_)
       return ang_a
     
     t_solution = fsolve(ang_solver, 0)
     datetime_solution =  approx_date + timedelta(t_solution)
-    print(t_solution)
-    print(datetime_solution)
     #return datetime_to_astropy(approx_time)

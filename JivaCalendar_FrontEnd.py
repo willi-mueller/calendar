@@ -3,6 +3,7 @@ from datetime import timedelta
 from datetime import datetime as dt
 from datetime import timezone as tmz
 import pytz
+import math
 #from astropy.coordinates import Angle
 
 class Pancanga:
@@ -35,10 +36,12 @@ class Pancanga:
 		while date_<month_end:
 			if verbose: print("running:",date_,' '*20,end='\r')
 
+			temp_1 = dt.now() # temp
 			sunrise,sunset,_,_ = jce.get_local_observations(location=(self.latitude,self.longitude),t=jce.datetime_to_astropy(date_),
 				sun_horizon=sun_horizon,moon_horizon=moon_horizon,find=["next"]*4)
 			_,_,moonrise,moonset = jce.get_local_observations(location=(self.latitude,self.longitude),t=sunrise,
 				sun_horizon=sun_horizon,moon_horizon=moon_horizon,find=["next"]*4)
+			temp_2 = dt.now() # temp
 			sunrise_dt = jce.astropy_to_datetime(sunrise) # This is in utc.
 
 			tithi,e_time = get_tithi_start_end_Ec(sunrise_dt,accuracy=accuracy,get_start=False)
@@ -53,16 +56,21 @@ class Pancanga:
 					sun_naksatra = jce.Naksatra_list[sun_naksatra]
 			sunrise = jce.astropy_to_datetime(sunrise)
 			sunset = jce.astropy_to_datetime(sunset)
+			print("moonrise",moonrise,type(moonrise))
 			moonrise = jce.astropy_to_datetime(moonrise)
 			moonset = jce.astropy_to_datetime(moonset)
 			moon_sankramana = jce.astropy_to_datetime(moon_sankramana)
 			sun_sankramana_dt = jce.astropy_to_datetime(sun_sankramana)
-			dict_ = {"gregorian_date":date_, "sunrise":sunrise, "sunset":sunset, "moonrise":moonrise, "moonset":moonset,
+			dict_ = {"gregorian_date":date_.date(), "sunrise":sunrise, "sunset":sunset, "moonrise":moonrise, "moonset":moonset,
 			"masa":masa, "tithi":tithi, "tithi_end_time":e_time, "moon_naksatra":moon_naksatra, "sun_naksatra":sun_naksatra,
 			"next_moon_sankramana":moon_sankramana, "next_sun_sankramana":sun_sankramana_dt}
 			all_data += [dict_]
 			date_ += timedelta(days=1)
 			i += 1
+			temp_3 = dt.now() # temp
+			print("time 1:",temp_2-temp_1) # temp
+			print("time 2:",temp_3-temp_2) # temp
+			print() # temp
 		if verbose: print("finished running.",' '*20)
 
 		if update_attributes:
@@ -70,6 +78,57 @@ class Pancanga:
 			self.all_gregorian_month_calc_info = {"accuracy":accuracy,"ayanamsa":ayanamsa}
 		return all_data
 
+
+	def get_pancanga_gregorian_month_lite_Ec(self,accuracy=0.0001,ayanamsa='citrapaksa',verbose=True,dawn_duration=96): 
+		# dawn_duration is in minutes
+		# for the astral.sun module, default sun_horizon is 0.266 degrees
+		month_start = self.datetime.date().replace(day=1)
+		if self.datetime.month<12:
+			month_end = self.datetime.date().replace(day=1,month=self.datetime.month+1)
+		if self.datetime.month==12:
+			month_end = self.datetime.date().replace(day=1,month=1,year=self.datetime.year+1)
+
+		sun_data = jce.get_sunrise_sunset_astral(location=(self.latitude,self.longitude),date_=month_start)
+		masa,_,masa_end = get_masa_start_end_Ec(sun_data['sunrise'],accuracy=accuracy,ayanamsa=ayanamsa)
+		masa_end = masa_end.replace(tzinfo=pytz.UTC) # sunrise is timezone aware, so to compare I make this one aware too. Else error
+
+		all_data = []
+		date_ = month_start
+		i = 1
+		while date_<month_end:
+			if verbose: print("running:",date_,' '*20,end='\r')
+			temp_1 = dt.now() # temp
+			sun_data = jce.get_sunrise_sunset_astral(location=(self.latitude,self.longitude),date_=date_)
+			sunrise,sunset,dawn_astro,dusk_astro = sun_data["sunrise"], sun_data["sunset"], sun_data["dawn"], sun_data["dusk"]
+			temp_2 = dt.now() # temp
+			 # This is in utc.
+			dawn = sunrise - timedelta(minutes=dawn_duration)
+			temp_3 = dt.now() # temp
+			print("ME:",masa_end)
+			print("SR:",sunrise)
+			if sunrise>masa_end:
+				masa,_,masa_end = get_masa_start_end_Ec(sunrise,accuracy=accuracy,ayanamsa=ayanamsa)
+				masa_end = masa_end.replace(tzinfo=pytz.UTC)
+
+			_,tithi = jce.get_angle_tithi_Ec(jce.datetime_to_astropy(sunrise))
+			_,tithi_at_dawn = jce.get_angle_tithi_Ec(jce.datetime_to_astropy(dawn))
+			tithi = math.ceil(tithi)
+			tithi_at_dawn = math.ceil(tithi_at_dawn)
+			temp_4 = dt.now() # temp
+
+			print("time 1:",temp_2-temp_1) # temp
+			print("time 2:",temp_3-temp_2) # temp
+			print("time 3:",temp_4-temp_3) # temp
+			print() # temp
+
+			dict_ = {"gregorian_date":date_, "sunrise":sunrise, "sunset":sunset,
+			"masa":masa, "tithi":tithi, "tithi_at_dawn":tithi_at_dawn}
+			all_data += [dict_]
+			date_ += timedelta(days=1)
+			i += 1
+		if verbose: print("finished running.",' '*20)
+
+		return all_data
 
 def get_tithi_start_end_Ec(t=dt(2021,6,2,10,0,0),accuracy=0.01,get_start=True): # Tithi info for a time, time in UTC datetime. return in UTC datetime
 	dt_ = t # retaining a datetime copy for future use
