@@ -8,8 +8,9 @@ import math
 
 class Pancanga:
 
-	def __init__(self,date=(2021,1,1),time=(0,0,0),latitude=0.0,longitude=0.0):
+	def __init__(self,date=(2021,1,1),time=(0,0,0),latitude=27.5650,longitude=77.6593):
 		# latitude,longitude are floats in degrees. East longitude is positive.
+		# default location values of Vrindavan
 		# date and time specify moment in UTC
 		self.latitude = latitude
 		self.longitude = longitude
@@ -79,7 +80,8 @@ class Pancanga:
 		return all_data
 
 
-	def get_pancanga_gregorian_month_lite_Ec(self,accuracy=0.0001,ayanamsa='citrapaksa',verbose=True,dawn_duration=96): 
+	def get_pancanga_gregorian_month_lite_Ec(self,accuracy=0.0001,ayanamsa='citrapaksa',
+						verbose=True,dawn_duration=96): 
 		# dawn_duration is in minutes
 		# for the astral.sun module, default sun_horizon is 0.266 degrees
 		month_start = self.datetime.date().replace(day=1)
@@ -96,39 +98,40 @@ class Pancanga:
 		date_ = month_start
 		i = 1
 		while date_<month_end:
-			if verbose: print("running:",date_,' '*20,end='\r')
 			temp_1 = dt.now() # temp
+			if verbose: print("running:",date_,' '*20,end='\r')
 			sun_data = jce.get_sunrise_sunset_astral(location=(self.latitude,self.longitude),date_=date_)
 			sunrise,sunset,dawn_astro,dusk_astro = sun_data["sunrise"], sun_data["sunset"], sun_data["dawn"], sun_data["dusk"]
-			temp_2 = dt.now() # temp
 			 # This is in utc.
 			dawn = sunrise - timedelta(minutes=dawn_duration)
-			temp_3 = dt.now() # temp
-			print("ME:",masa_end)
-			print("SR:",sunrise)
 			if sunrise>masa_end:
 				masa,_,masa_end = get_masa_start_end_Ec(sunrise,accuracy=accuracy,ayanamsa=ayanamsa)
 				masa_end = masa_end.replace(tzinfo=pytz.UTC)
 
-			_,tithi = jce.get_angle_tithi_Ec(jce.datetime_to_astropy(sunrise))
-			_,tithi_at_dawn = jce.get_angle_tithi_Ec(jce.datetime_to_astropy(dawn))
+			_, tithi, m_ang, s_ang = jce.get_angle_tithi_Ec(jce.datetime_to_astropy(sunrise),get_individual_angles=True)
 			tithi = math.ceil(tithi)
-			tithi_at_dawn = math.ceil(tithi_at_dawn)
-			temp_4 = dt.now() # temp
-
-			print("time 1:",temp_2-temp_1) # temp
-			print("time 2:",temp_3-temp_2) # temp
-			print("time 3:",temp_4-temp_3) # temp
-			print() # temp
+			m_nak = jce.find_naksatra_Ec(m_ang,ayanamsa=ayanamsa)
+			s_nak = jce.find_naksatra_Ec(s_ang,ayanamsa=ayanamsa)
 
 			dict_ = {"gregorian_date":date_, "sunrise":sunrise, "sunset":sunset,
-			"masa":masa, "tithi":tithi, "tithi_at_dawn":tithi_at_dawn}
+			"masa":masa, "tithi":tithi, "sun naksatra":s_nak,"moon naksatra":m_nak}
 			all_data += [dict_]
 			date_ += timedelta(days=1)
 			i += 1
 		if verbose: print("finished running.",' '*20)
+		self.month_data_lite = all_data
 
 		return all_data
+
+def get_dawn_info(sunrise,dawn_duration=96): 
+	# Sunrise time (datetime object) is required instead of just date because it has additional info. Saves compute
+	dawn_time = sunrise - timedelta(minutes=dawn_duration)
+	_, tithi, m_ang, s_ang = jce.get_angle_tithi_Ec(jce.datetime_to_astropy(dawn_time),get_individual_angles=True)
+	tithi = math.ceil(tithi)
+
+	return dawn_time, tithi, None, None # Eventaully return the correct s_nak and m_nak
+	return dawn_time, tithi, s_nak, m_nak
+
 
 def get_tithi_start_end_Ec(t=dt(2021,6,2,10,0,0),accuracy=0.01,get_start=True): # Tithi info for a time, time in UTC datetime. return in UTC datetime
 	dt_ = t # retaining a datetime copy for future use
@@ -184,6 +187,28 @@ def local_to_utc(datetime,longitude):
 
 def utc_to_local(datetime,longitude):
 	return datetime + timedelta(hours=longitude/360*24)
+
+def get_year_data(year=2021,latitude=27.5650,longitude=77.6593,accuracy=0.0001,ayanamsa='citrapaksa',
+				dawn_duration=96,verbose=True):
+	# default location is Vrindavan
+	year_data = []
+	for i in range(1,13):
+		date_ = (year,i,15) # middle of the month
+		if verbose: print("running month",i)
+		p = Pancanga(date=date_,latitude=latitude,longitude=longitude)
+		month_data = p.get_pancanga_gregorian_month_lite_Ec(verbose=verbose,accuracy=accuracy,
+												dawn_duration=dawn_duration,ayanamsa=ayanamsa)
+		year_data += [month_data]
+	return year_data
+
+def get_month_data(year=2021,month=1,latitude=27.5650,longitude=77.6593,accuracy=0.0001,
+		ayanamsa='citrapaksa', dawn_duration=96,verbose=True):
+	# default location is Vrindavan
+	date_ = (year,month,15) # middle of the month
+	p = Pancanga(date=date_,latitude=latitude,longitude=longitude)
+	month_data = p.get_pancanga_gregorian_month_lite_Ec(verbose=verbose,accuracy=accuracy,
+											dawn_duration=dawn_duration,ayanamsa=ayanamsa)
+	return month_data
 
 if __name__ == "__main__":
 	moment = Pancanga(date=(2021,6,3),time=(21,17,0),location=(39.29,-76.61))
