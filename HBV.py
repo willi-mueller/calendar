@@ -1,4 +1,5 @@
 import JivaCalendar_FrontEnd as jcf
+import parana as pn
 
 class HBV:
 	def __init__(self, curr_month, next_month):
@@ -8,6 +9,21 @@ class HBV:
 	#def head(month, month_next, month_prev):
 
 	def HVV_test(self): 
+		def create_string(tit_seq,vrata_day):
+			info_str_1 = f"tithi sequence is {tit_seq}. The sequence is "
+			info_str_2 = f"(day1_tithi,day2_dawn_tithi,day2_tithi,day3_tithi,day4_tithi,day5_tithi,day6_tithi, " 
+			info_str_3 = f"day7_tithi,day8_tithi,day9_tithi). Out of these, the vrata date is day {vrata_day}"
+			return info_str_1 + info_str_2 + info_str_3
+		def get_day(vrata_day,i,which_day):
+			if which_day=='vrata': factor = 0
+			if which_day=='next': factor = 1
+			index = i+vrata_day-1+factor # This is the required day index.
+				# If index is within the month then great, else look for in next_month
+			if index<len(self.curr_month):
+				return self.curr_month[index]
+			else:
+				return self.next_month[index-len(self.curr_month)]
+
 		# HVV stands for Hari-vāsara-vrata AKA ekādaśī
 		month_vrata_list = []
 		for i,day in enumerate(self.curr_month):
@@ -17,12 +33,13 @@ class HBV:
 				vrata_day, scenario_num, tit_seq = vrata_scenario_check_1p1(day_1,day_2,day_3,day_4)
 				if vrata_day is not None:
 					vrata_day, scenario_num, tit_seq = vrata_scenario_check_1p2(list_of_days,vrata_day,scenario_num,tit_seq)
+
+					parana_start,parana_end = pn.get_parana_times(get_day(vrata_day,i,'vrata'),get_day(vrata_day,i,'next'),
+													scenario_num,None)
 					vrata_date = list_of_days[vrata_day-1]["gregorian_date"]
-					info_str_1 = f"tithi sequence is {tit_seq}. The sequence is "
-					info_str_2 = f"(day1_tithi,day2_dawn_tithi,day2_tithi,day3_tithi,day4_tithi,day5_tithi,day6_tithi, " 
-					info_str_3 = f"day7_tithi,day8_tithi,day9_tithi). Out of these, the vrata date is day {vrata_day}"
-					info_str = info_str_1 + info_str_2 + info_str_3
-					month_vrata_list += [{"date":vrata_date,"type":scenario_num,"info":info_str}]
+					month_vrata_list += [{"date":vrata_date,"type":scenario_num,"info":create_string(tit_seq,vrata_day),
+							"parana":(parana_start,parana_end)}]
+
 		return month_vrata_list
 				
 	def return_following_days(self,day_number):
@@ -108,7 +125,7 @@ def pt(tithi):
 #-------------------User Facing functions Below----------------------------
 
 def get_month_vrata(year,month,latitude=27.5650,longitude=77.6593,accuracy=0.0001,
-		ayanamsa='citrapaksa', dawn_duration=96):
+		ayanamsa='citrapaksa', dawn_duration=96,verbose=True):
 	def get_prev_month_data():
 		if month>1:
 			return jcf.get_month_data(year=year,month=month-1,latitude=latitude,longitude=longitude,
@@ -125,10 +142,12 @@ def get_month_vrata(year,month,latitude=27.5650,longitude=77.6593,accuracy=0.000
 			return jcf.get_month_data(year=year+1,month=1,latitude=latitude,longitude=longitude,
 							accuracy=accuracy,ayanamsa=ayanamsa,dawn_duration=dawn_duration,verbose=False)
 
+	if verbose: print('loading data...',end='')
 	curr_month = jcf.get_month_data(year=year,month=month,latitude=latitude,longitude=longitude,
 							accuracy=accuracy,ayanamsa=ayanamsa,dawn_duration=dawn_duration,verbose=False)
 	prev_month = get_prev_month_data()
 	next_month = get_next_month_data()
+	if verbose: print("done.")
 	h = HBV(curr_month=prev_month,next_month=curr_month)
 	vratas1 = h.HVV_test()
 	h = HBV(curr_month=curr_month,next_month=next_month)
