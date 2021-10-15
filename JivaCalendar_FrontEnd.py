@@ -92,7 +92,8 @@ class Pancanga:
 
 		sun_data = jce.get_sunrise_sunset_astral(location=(self.latitude,self.longitude),date_=month_start)
 		masa,_,masa_end = get_masa_start_end_Ec(sun_data['sunrise'],accuracy=accuracy,ayanamsa=ayanamsa)
-		masa_end = masa_end.replace(tzinfo=pytz.UTC) # sunrise is timezone aware, so to compare I make this one aware too. Else error
+		#masa_end = masa_end.replace(tzinfo=pytz.UTC) # sunrise is timezone aware, so to compare I make this one aware too. Else error
+		#Now made the above change in the fucntion get_masa_start_end_Ec()
 
 		all_data = []
 		date_ = month_start
@@ -106,7 +107,7 @@ class Pancanga:
 			dawn = sunrise - timedelta(minutes=dawn_duration)
 			if sunrise>masa_end:
 				masa,_,masa_end = get_masa_start_end_Ec(sunrise,accuracy=accuracy,ayanamsa=ayanamsa)
-				masa_end = masa_end.replace(tzinfo=pytz.UTC)
+				#masa_end = masa_end.replace(tzinfo=pytz.UTC) #Now made this change in the fucntion get_masa_start_end_Ec()
 
 			_, tithi, m_ang, s_ang = jce.get_angle_tithi_Ec(jce.datetime_to_astropy(sunrise),get_individual_angles=True)
 			tithi = math.ceil(tithi)
@@ -141,10 +142,11 @@ def get_tithi_start_end_Ec(t=dt(2021,6,2,10,0,0),accuracy=0.01,get_start=True): 
 	f_lon = int(s_lon + 12) # finish angle value for the tithi
 	tit = int(s_lon/12)+1
 	f_time = jce.solve_body_time_Ec(lon=f_lon,t=t,find='next',body='moon_synodic',accuracy=accuracy) # find synodic location of the moon
-	f_time = jce.astropy_to_datetime(f_time)
+	f_time = jce.astropy_to_datetime(f_time).replace(tzinfo=pytz.UTC)
+
 	if get_start:
 		s_time = jce.solve_body_time_Ec(lon=s_lon,t=t,body='moon_synodic',accuracy=accuracy) # find synodic location of the moon
-		s_time = jce.astropy_to_datetime(s_time)
+		s_time = jce.astropy_to_datetime(s_time).replace(tzinfo=pytz.UTC)
 		return tit,s_time,f_time
 	return tit,f_time
 
@@ -156,8 +158,8 @@ def get_masa_start_end_Ec(t=dt(2021,6,2,10,0,0),accuracy=0.01,ayanamsa='citrapak
 	m,s = jce.get_sun_moon_Ec(time_s)
 	num,_ = jce.find_rasi_Ec(s.lon,ayanamsa=ayanamsa)
 	masa = jce.Maasa_list[num]
-	time_s = jce.astropy_to_datetime(time_s)
-	time_e = jce.astropy_to_datetime(time_e)
+	time_s = jce.astropy_to_datetime(time_s).replace(tzinfo=pytz.UTC)
+	time_e = jce.astropy_to_datetime(time_e).replace(tzinfo=pytz.UTC)
 	return masa,time_s,time_e
 
 def get_sankramana_time(t=dt(2021,6,2,10,0,0),body='sun',accuracy=0.01,ayanamsa='citrapaksa',find='all'):
