@@ -47,13 +47,13 @@ def astropy_to_date(t): # Converts only to date. Truncates
 def astropy_to_datetime(t):
     return t.to_datetime()
 
-Rasi_list = ["Mesa","Rsabha","Mithuna","Karkataka","Simha","Kanya","Tula","Vrscika","Dhanus","Makara","Kumbha","Meena"]
+Rasi_list = ['mesa', 'vrsabha', 'mithuna', 'karka', 'simha', 'kanya', 'tula', 'vrscika', 'dhanu', 'makara', 'kumbha', 'mina']
 
-Maasa_list = ["Vaisakha","Jyestha","Asadha","Sravana","Bhadrapada","Asvina","Kartika","Mrgashirsha","Pausa","Magha","Phalguna","Caitra"]
+Masa_list = ['vaisakha','jyestha','asadha','sravana','bhadrapada','asvina','kartika','margasirsa','pausa','magha','phalguna','caitra']
 
-Naksatra_list = ['Ashwini', 'Bharani', 'Krittika', 'Rohini', 'Mrighasira', 'Ardra', 'Punarvasu', 'Pushya', 'Ashlesha', 'Magha', 
-                 'Purva Phalguni', 'Uttara Phalguni', 'Hasta', 'Chitra', 'Swati', 'Vishaka', 'Anuradha', 'Jyestha', 'Moola', 
-                 'Purvashada', 'Uttarashada', 'Sharavan', 'Dhanishta', 'Shatabisha', 'Purvabhadra', 'Uttarabhadra', 'Revati']
+Naksatra_list = ['asvini', 'bharani', 'krittika', 'rohini', 'mrgasirsa', 'ardra', 'punarvasu', 'pusya', 'aslesa', 'magha', 
+                'purvaphalguni', 'uttaraphalguni', 'hasta', 'citra', 'svati', 'visakha', 'anuradha', 'jyestha', 'mula',
+                 'purvasada', 'uttarasada', 'sravana', 'dhanistha', 'satabhisa', 'purvabhadra', 'uttarabhadra', 'revati']
 
 maasa_gaps = [28, 33, 34, 35] 
 # NOTE: I don't actually use this at all. My method is more fundamental, so is more reliable. Read the documentation for more info
@@ -88,9 +88,8 @@ def get_sun_moon_Ec(t = Time("J2000")): # Ec=Ecliptic
     s_ec = s_inf.transform_to(GeocentricTrueEcliptic())
     return m_ec,s_ec
 
-def get_angle_tithi_Ec(t= Time("J2000")):
+def get_angle_tithi_Ec(t= Time("J2000"),get_individual_angles=False):
     m,s = get_sun_moon_Ec(t=t)
-
     m_ra = m.lon.degree
     m_dec = m.lat.degree
 
@@ -101,7 +100,9 @@ def get_angle_tithi_Ec(t= Time("J2000")):
     ms_angle = ms_angle%360 
     tithi = (ms_angle)/12
 
-    return ms_angle,tithi
+    if get_individual_angles: 
+        return ms_angle, tithi, m_ra, s_ra
+    return ms_angle, tithi
 
 """# Finding New Moon and Solving for time"""
 
@@ -130,6 +131,7 @@ def find_new_moon_Ec(t_approx):
 
 def find_new_moon_date_before_Ec(t=Time("J2000")):
     # Given a date, find the date the month starts by calculating the nearest earler new_moon
+    # Here we first calc approx date and then call find_new_moon_Ec to find the exact date.
     ang,_ = get_angle_tithi_Ec(t)
     approx_delta = timedelta(days=ang/360*lunar_month)
     approx_date = datetime_to_astropy(astropy_to_date(t)-approx_delta)
@@ -142,7 +144,7 @@ def find_new_moon_date_before_Ec(t=Time("J2000")):
         exact_date = find_new_moon_Ec(new_approx_date)
     return exact_date
 
-def find_new_moon_time_Ec(t=Time("J2000"),accuracy=0.1):
+def find_new_moon_time_Ec(t=Time("J2000"),accuracy=0.01):
     # Using the above two functions, this one finds the exact new moon date and time before t
     # accuracy is the maximum angle difference in degrees from 360deg 
     date_ = find_new_moon_date_before_Ec(t=t)
@@ -175,7 +177,7 @@ def find_new_moon_time_Ec(t=Time("J2000"),accuracy=0.1):
     return datetime_to_astropy(approx_time)
 
 ## --------------------NOTE:: Need to build in some method below to avoid error close to 360 degree.
-def solve_moon_time_Ec(lon,t,accuracy=0.1):
+def solve_moon_time_Ec(lon,t,accuracy=0.01):
     # in the month of t, solve for the time at which sun-moon=lon
     nm_date = find_new_moon_time_Ec(t=t) # new_moon date
     nm_date = astropy_to_datetime(nm_date)
@@ -197,6 +199,7 @@ def solve_moon_time_Ec(lon,t,accuracy=0.1):
         # if moon-sun=2degrees then ang=-2
 
 def solve_body_time_Ec(lon,t,body,accuracy=0.01,find='previous'):
+    # This function supercedes solve_moon_time_Ec
     tp = time_periods[body]
     if type(lon)==Angle: lon = lon.degree
     def body_lon(t_):
@@ -216,6 +219,15 @@ def solve_body_time_Ec(lon,t,body,accuracy=0.01,find='previous'):
         approx_time = astropy_to_datetime(t) - timedelta(days=((c-lon)%360)/360*tp)
     if find.lower()=='next':
         approx_time = astropy_to_datetime(t) + timedelta(days=((lon-c)%360)/360*tp)
+    if find.lower()=='nearest':
+        td1 = timedelta(days=((c-lon)%360)/360*tp)
+        td2 = timedelta(days=((lon-c)%360)/360*tp)
+        if abs(td1)<abs(td2):
+            approx_time = astropy_to_datetime(t) - timedelta(days=((c-lon)%360)/360*tp)
+        else:
+            approx_time = astropy_to_datetime(t) + timedelta(days=((lon-c)%360)/360*tp)
+    if find not in ['previous','next','nearest']:
+        raise ValueError("find should be one of 'previous','next','nearest'")
 
     if lon>30 and lon<330:
         c = body_lon(approx_time)
@@ -263,20 +275,28 @@ def get_ayanamsa(ayanamsa):
     else:
         raise Exception("ayanamsa must be float, int, string or astropy.coordinates.angles.Angle")
 
-def naksatra_lon_Ec(ayanamsa='citrapaksa'):
+def naksatra_lon_Ec(ayanamsa='citrapaksa',unit='Angle'):
     # List of Naksatra longitudes (in the ecliptic, so equally spaced). With J2000 equinox as coordinate axis. 
     # Ayanamsa is the starting point of the Naksatras
+    if unit not in ['degree','degrees','Angle']:
+        raise ValueError("unit must be in 'degree','degrees','Angle'")
     ayanamsa = get_ayanamsa(ayanamsa)
     diff = Angle('13d20m')
     naksatra_lon_list = [(ayanamsa + n*diff)%Angle("360d") for n in range(27)]
+    if unit in ['degree','degrees']:
+        naksatra_lon_list = [el.degree for el in naksatra_lon_list]
     return naksatra_lon_list
 
-def rasi_lon_Ec(ayanamsa='citrapaksa'):
+def rasi_lon_Ec(ayanamsa='citrapaksa',unit='Angle'):
     # List of Rāśi longitudes (in the ecliptic, so equally spaced). With J2000 equinox as coordinate axis, and geocentric origin.
     # Ayanamsa is the starting point of the Naksatras
+    if unit not in ['degree','degrees','Angle']:
+        raise ValueError("unit must be in 'degree','degrees','Angle'")
     ayanamsa = get_ayanamsa(ayanamsa)
     diff = Angle('30d')
     rasi_lon = [(ayanamsa + n*diff)%Angle("360d") for n in range(12)]
+    if unit in ['degree','degrees']:
+        naksatra_lon_list = [el.degree for el in naksatra_lon_list]
     return rasi_lon
 
 # Note that the below functions (to find Naksatra for a given longitude) don't use the above functions to generate a list of 
