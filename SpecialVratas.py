@@ -4,12 +4,17 @@ import JivaCalendar_FrontEnd as jcf
 from datetime import timezone as tmz
 from datetime import timedelta
 
-def main():
+def main(data,hvv_date_list,accuracy=0.001,ayanamsa='citrapaksa',timezone_offset=None):
 	# prepare data in a way that day dict has one more entry called 
-	return 1+1
+	if type(data[0])==list: #flattening data if not already flat
+		data = [d for sublist in data for d in sublist]
+	sr = get_siva_ratri(data,accuracy=accuracy,timezone_offset=timezone_offset)
+	rn = get_rama_navami(data,hvv_date_list,accuracy=accuracy,timezone_offset=timezone_offset)
+	kj = get_krsna_janmastami(data,accuracy=accuracy,timezone_offset=timezone_offset,ayanamsa=ayanamsa)
+	return {'siva_ratri':sr,'rama_navami':rn,'krsna_janmastami':kj}
 
 
-def get_siva_ratri(data,muhurta=180,accuracy=0.001,timezone_offset=None):
+def get_siva_ratri(data,muhurta=48,accuracy=0.001,timezone_offset=None):
 	# muhurta is in minutes
 	muhurta = timedelta(minutes=muhurta)
 
@@ -27,6 +32,7 @@ def get_siva_ratri(data,muhurta=180,accuracy=0.001,timezone_offset=None):
 		tit_seq = [d['tithi'] for d in day_seq]
 		masa = day['masa']
 
+		# Missing cases: Couldn't find any. Checked against general vratas in General_Vrata.py
 		scenario = None
 		if tit_seq == [28,29,30]: 
 			day2_sunrise = day_seq[1]['sunrise']
@@ -92,7 +98,6 @@ def get_rama_navami(data,hvv_date_list,accuracy=0.001,timezone_offset=None):
 	all_vratas_list = []
 
 	for i,day in enumerate(data):
-		print(day)
 		if day['adhika_masa']:
 			continue
 		if day['masa']!='caitra':
@@ -104,6 +109,9 @@ def get_rama_navami(data,hvv_date_list,accuracy=0.001,timezone_offset=None):
 		tit_seq = [d['tithi'] for d in day_seq]
 		masa = day['masa']
 
+		# Missing cases: Couldn't find any missing. This seems quite complete. Can check the rest against this.
+		#
+		#
 		scenario = None
 		if tit_seq==[8,9,10]: 
 			scenario = 1
@@ -183,6 +191,9 @@ def get_krsna_janmastami(data,accuracy=0.001,timezone_offset=None,ayanamsa='citr
 		masa = day['masa']
 
 		scenario = None
+		# Missing cases: [6,8,8], [7,8,10]
+		#
+		#
 		if tit_seq==[7,8,9] or tit_seq==[6,8,9]:
 			scenario = 1
 			vrata_index = 1
@@ -197,6 +208,7 @@ def get_krsna_janmastami(data,accuracy=0.001,timezone_offset=None,ayanamsa='citr
 			vrata_index = 1
 			d2 = day_seq[1]
 			d3 = day_seq[2]
+			# dow stands for day of the week
 			d2_dow = d2['gregorian_date'].strftime("%A").lower() # this is day of the week as a lower case string
 			d3_dow = d3['gregorian_date'].strftime("%A").lower()
 			midnight = d2['sunset'] + (d3['sunrise'] - d2['sunset'])/2
@@ -257,6 +269,7 @@ def get_krsna_janmastami(data,accuracy=0.001,timezone_offset=None,ayanamsa='citr
 
 		vrata_day = day_seq[vrata_index]
 		next_day = day_seq[vrata_index+1]
+		sunrise = vrata_day['sunrise']
 		next_sunrise = next_day['sunrise']
 		next_sunset = next_day['sunset']
 		forenoon = next_sunrise + (next_sunset - next_sunrise)/3
@@ -264,46 +277,48 @@ def get_krsna_janmastami(data,accuracy=0.001,timezone_offset=None,ayanamsa='citr
 
 		if scenario==1 or scenario>=4:
 			# i.e. the vrata is on astami
-			nak = vrata_day['moon_naksatra']
+			roh_s,_ = jcf.get_sankramana_time_Ec(t=sunrise,body='moon',find='nearest',which_nak='rohini',
+					start_end='start',accuracy=accuracy,ayanamsa=ayanamsa)
+			tit,tit_s,tit_e = jcf.get_tithi_start_end_Ec(t=sunrise,accuracy=accuracy,get_start=True,which_tithi='current')
+			if tit!=23:
+				print("WARNING! Scenario 1 or >=4 for janmastami but the vrata day tithi is not astami. Tithi is",tit)
 
-			if nak=='rohini':
-				nak_e,_ = jcf.get_sankramana_time_Ec(t=vrata_day['sunrise'],body='moon',accuracy=accuracy,ayanamsa=ayanamsa,
-					which_nak='current',start_end='end')
-				_,tit_e = jcf.get_tithi_start_end_Ec(t=vrata_day['sunrise'],accuracy=accuracy,get_start=False,which_tithi='current')
-					
-				if tit_e<next_sunrise and nak_e<next_sunrise:
+			if roh_s>tit_s and roh_s<tit_e:
+				# i.e. rohini is present at some point in the tithi
+				roh_e,_ = jcf.get_sankramana_time_Ec(t=sunrise,body='moon',find='nearest',which_nak='rohini',
+					start_end='end',accuracy=accuracy,ayanamsa=ayanamsa)
+				if tit_e<next_sunrise and roh_e<next_sunrise:
 					parana_start = next_sunrise
 					parana_end = forenoon
-				if tit_e>next_sunrise and nak_e<next_sunrise:
+				if tit_e>next_sunrise and roh_e<next_sunrise:
 					parana_start = tit_e
 					parana_end = forenoon
-				if tit_e<next_sunrise and nak_e>next_sunrise and nak_e<forenoon:
-					parana_start = nak_e
+				if tit_e<next_sunrise and roh_e>next_sunrise and roh_e<forenoon:
+					parana_start = roh_e
 					parana_end = forenoon
-				if tit_e<next_sunrise and nak_e>forenoon and nak_e<next_sunset:
-					parana_start = nak_e
+				if tit_e<next_sunrise and roh_e>forenoon and roh_e<next_sunset:
+					parana_start = roh_e
 					parana_end = next_sunset
-				if tit_e<next_sunrise and nak_e>next_sunset:
+				if tit_e<next_sunrise and roh_e>next_sunset:
 					parana_start = next_sunrise
 					parana_end = forenoon
 				###### The next scenario (num 6) has major typo in Tyagi Maharaj's doc
-				if tit_e>nak_e and nak_e>next_sunrise:
+				if tit_e>roh_e and roh_e>next_sunrise:
 					parana_start = tit_e
-					parana_start_alt = nak_e
+					parana_start_alt = roh_e
 					parana_end = forenoon
-				if tit_e>next_sunrise and nak_e>tit_e and nak_e<forenoon:
-					parana_start = nak_e
+				if tit_e>next_sunrise and roh_e>tit_e and roh_e<forenoon:
+					parana_start = roh_e
 					parana_start_alt = tit_e
 					parana_end = forenoon
-				if tit_e>next_sunrise and nak_e>tit_e and nak_e>forenoon and nak_e<next_sunset:
-					parana_start = nak_e
+				if tit_e>next_sunrise and roh_e>tit_e and roh_e>forenoon and roh_e<next_sunset:
+					parana_start = roh_e
 					parana_start_alt = tit_e
 					parana_end = next_sunset
-				if tit_e>next_sunrise and nak_e>tit_e and nak_e>next_sunset:
+				if tit_e>next_sunrise and roh_e>tit_e and roh_e>next_sunset:
 					parana_start = tit_e
 					parana_end = forenoon
-
-			if nak!='rohini':
+			else:
 				_,tit_e = jcf.get_tithi_start_end_Ec(t=vrata_day['sunrise'],accuracy=accuracy,get_start=False,which_tithi='current')
 				parana_start = tit_e if tit_e>next_sunrise else next_sunrise
 				parana_end = forenoon
