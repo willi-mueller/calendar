@@ -51,17 +51,17 @@ Rasi_list = ['mesa', 'vrsabha', 'mithuna', 'karka', 'simha', 'kanya', 'tula', 'v
 
 Masa_list = ['vaisakha','jyestha','asadha','sravana','bhadrapada','asvina','kartika','margasirsa','pausa','magha','phalguna','caitra']
 
-Naksatra_list = ['asvini', 'bharani', 'krittika', 'rohini', 'mrgasirsa', 'ardra', 'punarvasu', 'pusya', 'aslesa', 'magha', 
+Naksatra_list = ['asvini', 'bharani', 'krttika', 'rohini', 'mrgasirsa', 'ardra', 'punarvasu', 'pusya', 'aslesa', 'magha', 
                 'purvaphalguni', 'uttaraphalguni', 'hasta', 'citra', 'svati', 'visakha', 'anuradha', 'jyestha', 'mula',
                  'purvasada', 'uttarasada', 'sravana', 'dhanistha', 'satabhisa', 'purvabhadra', 'uttarabhadra', 'revati']
 
 maasa_gaps = [28, 33, 34, 35] 
-# NOTE: I don't actually use this at all. My method is more fundamental, so is more reliable. Read the documentation for more info
+# UPDATE: I don't actually use this at all. My method is more fundamental, so is more reliable. Read the documentation for more info
 # The gaps in adhika maasa, in months. 
 # I think they're actually lunar months though, since the mean of the list is exactly 32.5. Predictions also seem to be correct with this assumption.
 # Source: "https://sriramgurujala.com/what-is-adhik-maasam-or-adhik-maas-how-do-we-calculate-it/"
 
-lunar_month = 29.5306 #length of lunar month in days
+lunar_month = 29.5306 #length of lunar month in days. Only used for approximate purposes so no worries about varyiable lengths of months
 
 time_periods = {'sun':365.25636,'moon':27.321,'moon_synodic':29.5306} # length of sidereal time periods in days
 

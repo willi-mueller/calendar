@@ -359,6 +359,8 @@ def get_sankramana_time_Ec(t=dt(2021,6,2,10,0,0),body='moon',accuracy=0.01,ayana
 		current_nak_num = num_now
 
 	else: # Guves the starting/ending time of the naksatra given by which_nak
+		if type(which_nak)==str:
+			which_nak = jce.Naksatra_list.index(which_nak)
 		t = jce.datetime_to_astropy(t)
 		if start_end=='start':
 			time_ = jce.solve_body_time_Ec(lon=jce.naksatra_lon_Ec(ayanamsa=ayanamsa)[which_nak],t=t,
@@ -436,6 +438,27 @@ def get_day_data(year=2021,month=1,day=1,latitude=27.5650,longitude=77.6593,accu
 	day_data = p.get_pancanga_day_Ec(verbose=verbose,accuracy=accuracy,
 											dawn_duration=dawn_duration,ayanamsa=ayanamsa,system=system)
 	return day_data
+
+
+# The func below works like get_year_data but uses arbitrary starting and ending month and year.
+def get_data(year_s,month_s,year_e,month_e,latitude=27.5650,longitude=77.6593,accuracy=0.001,
+			ayanamsa='citrapaksa',dawn_duration=96,system='amanta',verbose=True):
+	year_data = []
+	curr_year = year_s
+	curr_month = month_s
+	while curr_year<year_e or (curr_year==year_e and curr_month<=month_e):
+		date_ = (curr_year,curr_month,15)
+		if verbose: print("running year month:",curr_year,curr_month)
+		p = Pancanga(date=date_,latitude=latitude,longitude=longitude)
+		month_data = p.get_pancanga_gregorian_month_lite_Ec(verbose=verbose,accuracy=accuracy,
+											dawn_duration=dawn_duration,ayanamsa=ayanamsa,system=system)
+		year_data += [month_data]
+		if curr_month<12:
+			curr_month += 1
+		else:
+			curr_year += 1
+			curr_month = 1
+	return year_data
 
 
 

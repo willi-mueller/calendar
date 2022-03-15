@@ -5,7 +5,8 @@ from datetime import timezone as tmz
 from datetime import timedelta
 
 def main(data,hvv_date_list,accuracy=0.001,ayanamsa='citrapaksa',timezone_offset=None):
-	# prepare data in a way that day dict has one more entry called 
+	# hvv_date_list is a list of hari vasara vrata dates in the given time period. The hari vasara vrata 
+	# could be on an ekadasi day or dvadasi day, it doesn't matter just include all.
 	if type(data[0])==list: #flattening data if not already flat
 		data = [d for sublist in data for d in sublist]
 	sr = get_siva_ratri(data,accuracy=accuracy,timezone_offset=timezone_offset)
@@ -191,7 +192,7 @@ def get_krsna_janmastami(data,accuracy=0.001,timezone_offset=None,ayanamsa='citr
 		masa = day['masa']
 
 		scenario = None
-		# Missing cases: [6,8,8], [7,8,10]
+		# Missing cases: [7,8,10] 
 		#
 		#
 		if tit_seq==[7,8,9] or tit_seq==[6,8,9]:
@@ -203,7 +204,7 @@ def get_krsna_janmastami(data,accuracy=0.001,timezone_offset=None,ayanamsa='citr
 		if tit_seq==[7,9,10]:
 			scenario = 3
 			vrata_index = 1
-		if tit_seq==[7,8,8]:
+		if tit_seq==[7,8,8] or tit_seq==[6,8,8]:
 			scenario = 4
 			vrata_index = 1
 			d2 = day_seq[1]
@@ -260,7 +261,7 @@ def get_krsna_janmastami(data,accuracy=0.001,timezone_offset=None,ayanamsa='citr
 					vrata_index = 2
 
 		if scenario==4:
-			print("WARNING! Scenario 4 is valid but nothing else fits the description")
+			print("WARNING! Scenario 4 is valid but nothing else fits the description for krsna janmastami")
 
 
 		# parana calculation here on:
@@ -274,6 +275,7 @@ def get_krsna_janmastami(data,accuracy=0.001,timezone_offset=None,ayanamsa='citr
 		next_sunset = next_day['sunset']
 		forenoon = next_sunrise + (next_sunset - next_sunrise)/3
 		parana_start_alt = None
+		parana_end_alt = None
 
 		if scenario==1 or scenario>=4:
 			# i.e. the vrata is on astami
@@ -287,18 +289,27 @@ def get_krsna_janmastami(data,accuracy=0.001,timezone_offset=None,ayanamsa='citr
 				# i.e. rohini is present at some point in the tithi
 				roh_e,_ = jcf.get_sankramana_time_Ec(t=sunrise,body='moon',find='nearest',which_nak='rohini',
 					start_end='end',accuracy=accuracy,ayanamsa=ayanamsa)
+
 				if tit_e<next_sunrise and roh_e<next_sunrise:
 					parana_start = next_sunrise
-					parana_end = forenoon
+					next_tit,next_tit_e = jcf.get_tithi_start_end_Ec(t=next_sunrise,accuracy=accuracy,get_start=False,which_tithi='current')
+					if next_tit==24: #Checking to see if the tithi on next sunrise (after the vrata day) is navmi
+						if next_tit_e<forenoon:
+							parana_end = next_tit_e
+						else:
+							parana_end = forenoon
 				if tit_e>next_sunrise and roh_e<next_sunrise:
 					parana_start = tit_e
 					parana_end = forenoon
 				if tit_e<next_sunrise and roh_e>next_sunrise and roh_e<forenoon:
 					parana_start = roh_e
+					parana_start_alt = next_sunrise
 					parana_end = forenoon
 				if tit_e<next_sunrise and roh_e>forenoon and roh_e<next_sunset:
 					parana_start = roh_e
+					parana_start_alt = next_sunrise
 					parana_end = next_sunset
+					parana_end_alt = forenoon
 				if tit_e<next_sunrise and roh_e>next_sunset:
 					parana_start = next_sunrise
 					parana_end = forenoon
@@ -320,8 +331,19 @@ def get_krsna_janmastami(data,accuracy=0.001,timezone_offset=None,ayanamsa='citr
 					parana_end = forenoon
 			else:
 				_,tit_e = jcf.get_tithi_start_end_Ec(t=vrata_day['sunrise'],accuracy=accuracy,get_start=False,which_tithi='current')
-				parana_start = tit_e if tit_e>next_sunrise else next_sunrise
-				parana_end = forenoon
+				if tit_e>next_sunrise:
+					parana_start = tit_e
+					parana_end = forenoon
+				else:
+					parana_start = next_sunrise
+					next_tit,next_tit_e = jcf.get_tithi_start_end_Ec(t=next_sunrise,accuracy=accuracy,get_start=False,which_tithi='current')
+					if next_tit==24: #Checking to see if the tithi on next sunrise (after the vrata day) is navmi
+						if next_tit_e<forenoon:
+							parana_end = next_tit_e
+						else:
+							parana_end = forenoon
+
+				
 
 		else:
 			_,tit_e = jcf.get_tithi_start_end_Ec(t=vrata_day['sunrise'],accuracy=accuracy,get_start=False,which_tithi='current')
@@ -338,7 +360,7 @@ def get_krsna_janmastami(data,accuracy=0.001,timezone_offset=None,ayanamsa='citr
 			print("WARNING! parana end is before parana start for krsna janmastami")
 			print("parana start:",parana_start)
 			print('parana end:',parana_end)
-		all_vratas_list += [(vrata_day['gregorian_date'],parana_start,parana_start_alt,parana_end,scenario)]
+		all_vratas_list += [(vrata_day['gregorian_date'],parana_start,parana_start_alt,parana_end,parana_end_alt,scenario)]
 
 	return all_vratas_list
 
