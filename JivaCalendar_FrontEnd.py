@@ -194,16 +194,14 @@ def timezone_lookup(location):
 	return pytz.timezone('EST')
 
 def process_timezone(timezone):
-	if str(type(timezone)).startswith("<class 'pytz.tzfile."):
-		return timezone
-	timezone = timezone.lower()
-
-	if timezone=='est':
-		return pytz.timezone('US/Eastern')
-	if timezone=='pst':
-		return pytz.timezone('PST')
-	if timezone=='utc':
-		return pytz.timezone('UTC')
+	if isinstance(timezone, str):
+		timezone = timezone.lower()
+		if timezone=='est':
+			return pytz.timezone('US/Eastern')
+		if timezone=='pst':
+			return pytz.timezone('PST')
+		if timezone=='utc':
+			return pytz.timezone('UTC')
 
 	return timezone
 
